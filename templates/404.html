@@ -1,0 +1,13 @@
+{# templates/404.html #}
+{% extends "portfolio/base.html" %}
+
+{% block title %}Page not found{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-xl px-4 py-24 text-center sm:px-6">
+  <p class="text-sm font-semibold text-blue-700">404</p>
+  <h1 class="mt-2 text-3xl font-extrabold text-slate-900">Page not found</h1>
+  <p class="mt-3 text-slate-600">The page you're looking for doesn't exist or has moved.</p>
+  <a href="{% url 'portfolio:home' %}" class="mt-8 inline-block rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700">Back to home</a>
+</div>
+{% endblock %}

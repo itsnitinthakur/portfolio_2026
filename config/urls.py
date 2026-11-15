@@ -1,0 +1,14 @@
+# config/urls.py
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("portfolio.urls")),
+]
+
+if settings.DEBUG:
+    # Uploaded images are served by Django only during local development.
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

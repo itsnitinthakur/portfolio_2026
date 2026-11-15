@@ -1,0 +1,37 @@
+{# portfolio/templates/portfolio/partials/experience_item.html #}
+<li class="relative pb-10 pl-8 last:pb-0 sm:pl-10">
+  <span class="absolute left-0 top-1.5 h-3.5 w-3.5 rounded-full border-2 {% if experience.is_current %}border-blue-600 bg-blue-600{% else %}border-slate-400 bg-white{% endif %}" aria-hidden="true"></span>
+  <span class="absolute bottom-0 left-[6px] top-6 w-px bg-slate-200" aria-hidden="true"></span>
+  <article>
+    <p class="text-sm font-medium text-slate-500">
+      <time datetime="{{ experience.start_date|date:'Y-m' }}">{{ experience.start_date|date:"M Y" }}</time> –
+      {% if experience.end_date %}<time datetime="{{ experience.end_date|date:'Y-m' }}">{{ experience.end_date|date:"M Y" }}</time>{% else %}Present{% endif %}
+      · {{ experience.get_employment_type_display }}
+    </p>
+    <h3 class="mt-1 text-lg font-semibold text-slate-900">{{ experience.job_title }}</h3>
+    <p class="text-base text-slate-700">
+      {% if experience.company_url %}<a href="{{ experience.company_url }}" class="font-medium hover:text-blue-700" rel="noopener" target="_blank">{{ experience.company }}</a>{% else %}<span class="font-medium">{{ experience.company }}</span>{% endif %}
+      {% if experience.location %}<span class="text-slate-500"> · {{ experience.location }}</span>{% endif %}
+    </p>
+    {% if experience.summary %}<p class="mt-3 leading-relaxed text-slate-600">{{ experience.summary }}</p>{% endif %}
+    {% if experience.highlight_list %}
+      <ul class="mt-3 list-disc space-y-1.5 pl-5 leading-relaxed text-slate-600 marker:text-blue-600">
+        {% for line in experience.highlight_list %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    {% if show_skills %}
+      {% with skills=experience.skills.all %}
+        {% if skills %}
+          <ul class="mt-4 flex flex-wrap gap-1.5" aria-label="Skills used">
+            {% for skill in skills %}<li class="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800">{{ skill.name }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+    {% endif %}
+    {% if experience.published_projects %}
+      <p class="mt-4 text-sm text-slate-600">Projects:
+        {% for project in experience.published_projects %}<a href="{{ project.get_absolute_url }}" class="font-medium text-blue-700 hover:underline">{{ project.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+      </p>
+    {% endif %}
+  </article>
+</li>
