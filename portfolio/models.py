@@ -3,7 +3,9 @@
 Database models for the portfolio app.
 
 Profile         the site owner: name, bio, photo and contact links (one row)
-Skill           a technology or capability, grouped by category
+Company         the company the owner represents, for customers and suppliers (one row)
+Product         a machine or product line the company supplies
+Skill          a technology or capability, grouped by category
 Experience      a role on the career timeline
 Education       a qualification
 Project         something built, linked to its skills and (optionally) a role
@@ -100,6 +102,120 @@ class Profile(TimeStampedModel):
     def load(cls):
         """Return the profile row, or None if it has not been created yet."""
         return cls.objects.filter(pk=1).first()
+
+
+# --------------------------------------------------------------------------- #
+# Company and its products
+# --------------------------------------------------------------------------- #
+class Company(TimeStampedModel):
+    """The company the site owner represents. The table holds a single row."""
+
+    name = models.CharField(max_length=160)
+    tagline = models.CharField(max_length=200, blank=True)
+    description = models.TextField(
+        help_text="Separate paragraphs with a blank line.",
+    )
+    website = models.URLField(blank=True)
+    established_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    staff_count = models.PositiveIntegerField(null=True, blank=True)
+    engineer_count = models.PositiveIntegerField(null=True, blank=True)
+    unit_count = models.PositiveSmallIntegerField(
+        "manufacturing units", null=True, blank=True
+    )
+    certifications = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Only list certificates that are current.",
+    )
+    capabilities = models.TextField(
+        blank=True,
+        help_text="One per line, for example: Installation and after-sales service.",
+    )
+    clients = models.TextField(
+        blank=True,
+        help_text="One client name per line. Shown as 'Clients include'.",
+    )
+    offices = models.TextField(
+        blank=True,
+        help_text="One office per line, for example: Corporate office: A-6, ..., New Delhi 110015",
+    )
+    sales_email = models.EmailField(blank=True)
+    sales_phone = models.CharField(max_length=80, blank=True)
+
+    class Meta:
+        verbose_name = "company"
+        verbose_name_plural = "company"
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # single-row table
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        return cls.objects.filter(pk=1).first()
+
+    @staticmethod
+    def _lines(text):
+        return [line.strip() for line in text.splitlines() if line.strip()]
+
+    @property
+    def capability_list(self):
+        return self._lines(self.capabilities)
+
+    @property
+    def client_list(self):
+        return self._lines(self.clients)
+
+    @property
+    def office_list(self):
+        return self._lines(self.offices)
+
+
+class ProductQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(is_published=True)
+
+    def featured(self):
+        return self.published().filter(is_featured=True)
+
+
+class Product(TimeStampedModel):
+    class Category(models.TextChoices):
+        WELDING = "welding", "Ultrasonic welding"
+        CUTTING = "cutting", "Ultrasonic cutting & sewing"
+        BAG_MAKING = "bag_making", "Bag making"
+        PRINTING = "printing", "Printing"
+        INDUCTION = "induction", "Induction heating"
+        CLEANING = "cleaning", "Cleaning, drilling & other"
+        COMPONENTS = "components", "Ultrasonic components"
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="products")
+    name = models.CharField(max_length=160)
+    category = models.CharField(max_length=20, choices=Category.choices, db_index=True)
+    summary = models.CharField(max_length=240, blank=True)
+    image = models.ImageField(upload_to="products/", blank=True)
+    image_alt = models.CharField(max_length=160, blank=True)
+    url = models.URLField("More details URL", blank=True)
+    is_featured = models.BooleanField(
+        default=False,
+        help_text="Featured products appear on the home page.",
+    )
+    is_published = models.BooleanField(default=True)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    objects = ProductQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["category", "order", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["company", "name"], name="product_unique_per_company"),
+        ]
+
+    def __str__(self):
+        return self.name
 
 
 # --------------------------------------------------------------------------- #
@@ -414,6 +530,7 @@ class ContactMessageQuerySet(models.QuerySet):
 
 class ContactMessage(models.Model):
     class InquiryType(models.TextChoices):
+        MACHINE = "machine", "Buying a machine / price quote"
         CLIENT = "client", "Client / customer project"
         SUPPLIER = "supplier", "Supplier / manufacturer"
         PARTNERSHIP = "partnership", "Sales / partnership"
@@ -436,6 +553,14 @@ class ContactMessage(models.Model):
         max_length=20,
         choices=InquiryType.choices,
         default=InquiryType.CLIENT,
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="enquiries",
+        verbose_name="product of interest",
     )
     subject = models.CharField(max_length=160)
     message = models.TextField()

@@ -10,7 +10,16 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 
-from .models import ContactMessage, Education, Experience, Profile, Project, Skill
+from .models import (
+    Company,
+    ContactMessage,
+    Education,
+    Experience,
+    Product,
+    Profile,
+    Project,
+    Skill,
+)
 
 admin.site.site_header = "Portfolio administration"
 admin.site.site_title = "Portfolio admin"
@@ -52,6 +61,56 @@ class ProfileAdmin(admin.ModelAdmin):
             '<img src="{}" alt="" style="width:160px;height:160px;object-fit:cover;border-radius:50%;">',
             obj.photo.url,
         )
+
+
+# --------------------------------------------------------------------------- #
+# Company and products
+# --------------------------------------------------------------------------- #
+class ProductInline(admin.TabularInline):
+    model = Product
+    fields = ("name", "category", "summary", "is_featured", "is_published", "order")
+    extra = 0
+    show_change_link = True
+
+
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    """One row only: the list page goes straight to the edit form."""
+
+    inlines = (ProductInline,)
+    fieldsets = (
+        (None, {"fields": ("name", "tagline", "description", "website")}),
+        ("Key facts", {"fields": ("established_year", "staff_count", "engineer_count", "unit_count", "certifications")}),
+        ("What you offer", {"fields": ("capabilities", "clients")}),
+        ("Sales contact", {"fields": ("sales_email", "sales_phone", "offices")}),
+    )
+
+    def has_add_permission(self, request):
+        return not Company.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        company = Company.load()
+        if company is not None:
+            return redirect(reverse("admin:portfolio_company_change", args=[company.pk]))
+        return super().changelist_view(request, extra_context)
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ("name", "category", "is_featured", "is_published", "order", "enquiry_count")
+    list_editable = ("is_featured", "is_published", "order")
+    list_filter = ("category", "is_featured", "is_published")
+    search_fields = ("name", "summary")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_enquiries=Count("enquiries"))
+
+    @admin.display(description="Enquiries", ordering="_enquiries")
+    def enquiry_count(self, obj):
+        return obj._enquiries
 
 
 # --------------------------------------------------------------------------- #
@@ -193,9 +252,9 @@ class ProjectAdmin(admin.ModelAdmin):
 class ContactMessageAdmin(admin.ModelAdmin):
     """Works as an inbox: messages arrive from the site and are triaged here."""
 
-    list_display = ("name", "email", "company", "country", "inquiry_type", "subject", "status", "created_at")
+    list_display = ("name", "email", "company", "country", "inquiry_type", "product", "subject", "status", "created_at")
     list_editable = ("status",)
-    list_filter = ("status", "inquiry_type", "created_at")
+    list_filter = ("status", "inquiry_type", "product", "created_at")
     search_fields = ("name", "email", "company", "country", "subject", "message")
     date_hierarchy = "created_at"
     actions = ("mark_as_read", "mark_as_replied", "mark_as_spam")
@@ -207,6 +266,7 @@ class ContactMessageAdmin(admin.ModelAdmin):
         "phone",
         "wechat_id",
         "inquiry_type",
+        "product",
         "subject",
         "message",
         "created_at",
@@ -215,7 +275,7 @@ class ContactMessageAdmin(admin.ModelAdmin):
     )
     fieldsets = (
         ("Sender", {"fields": ("name", "email", "company", "country", "phone", "wechat_id")}),
-        ("Message", {"fields": ("inquiry_type", "subject", "message", "created_at")}),
+        ("Message", {"fields": ("inquiry_type", "product", "subject", "message", "created_at")}),
         ("Follow-up", {"fields": ("status", "reply_by_email", "replied_at", "admin_notes")}),
     )
 

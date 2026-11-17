@@ -13,7 +13,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.html import escape
 
-from .models import ContactMessage, Experience, Profile, Project, Skill
+from .models import Company, ContactMessage, Education, Experience, Product, Profile, Project, Skill
 
 
 TEST_MEDIA = tempfile.mkdtemp(prefix="portfolio-test-media-")
@@ -30,7 +30,7 @@ class SeededSiteTests(TestCase):
         call_command("seed_portfolio", stdout=StringIO())
 
     def test_public_pages_load(self):
-        for name in ("home", "experience", "project_list", "skills", "contact"):
+        for name in ("home", "experience", "project_list", "skills", "company", "contact"):
             with self.subTest(page=name):
                 response = self.client.get(reverse(f"portfolio:{name}"))
                 self.assertEqual(response.status_code, 200)
@@ -41,6 +41,22 @@ class SeededSiteTests(TestCase):
         self.assertContains(response, escape(profile.headline))
         current = Experience.objects.current().first()
         self.assertContains(response, escape(current.job_title))
+
+    def test_seeded_content(self):
+        self.assertEqual(Project.objects.published().count(), 3)
+        self.assertTrue(all(p.cover_image for p in Project.objects.filter(is_featured=True)))
+        self.assertEqual(Education.objects.count(), 2)
+        self.assertTrue(Product.objects.featured().exists())
+
+    def test_company_page_and_quote_link(self):
+        response = self.client.get(reverse("portfolio:company"))
+        company = Company.load()
+        self.assertContains(response, escape(company.name))
+        product = Product.objects.featured().first()
+        self.assertContains(response, f"?product={product.pk}")
+        form_page = self.client.get(reverse("portfolio:contact"), {"product": product.pk})
+        self.assertContains(form_page, f'<option value="{product.pk}" selected>')
+        self.assertContains(form_page, escape(f"Enquiry: {product.name}"))
 
     def test_mobile_menu_markup(self):
         response = self.client.get(reverse("portfolio:home"))
@@ -106,7 +122,7 @@ class AdminTests(TestCase):
         call_command("seed_portfolio", stdout=StringIO())
         user = get_user_model().objects.create_superuser("admin", "a@example.com", "pw")
         self.client.force_login(user)
-        for model in ("profile", "skill", "experience", "education", "project", "contactmessage"):
+        for model in ("profile", "company", "product", "skill", "experience", "education", "project", "contactmessage"):
             with self.subTest(model=model):
                 response = self.client.get(reverse(f"admin:portfolio_{model}_changelist"), follow=True)
                 self.assertEqual(response.status_code, 200)

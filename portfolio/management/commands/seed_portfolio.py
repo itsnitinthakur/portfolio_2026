@@ -18,9 +18,10 @@ from django.db import transaction
 from django.utils.text import slugify
 
 from portfolio import seed_data
-from portfolio.models import Education, Experience, Profile, Project, Skill
+from portfolio.models import Company, Education, Experience, Product, Profile, Project, Skill
 
-PROFILE_PHOTO = Path(__file__).resolve().parents[2] / "seed_assets" / "profile.jpg"
+SEED_ASSETS = Path(__file__).resolve().parents[2] / "seed_assets"
+PROFILE_PHOTO = SEED_ASSETS / "profile.jpg"
 
 
 def parse_date(value):
@@ -28,7 +29,7 @@ def parse_date(value):
 
 
 class Command(BaseCommand):
-    help = "Load profile, skills, experience, projects and education from portfolio/seed_data.py."
+    help = "Load profile, company, products, skills, experience, projects and education from portfolio/seed_data.py."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -51,6 +52,7 @@ class Command(BaseCommand):
         experiences = self.seed_experiences(skills)
         self.seed_projects(skills, experiences)
         self.seed_education()
+        self.seed_company()
 
         if not profile.email:
             self.notes.append(
@@ -187,6 +189,7 @@ class Command(BaseCommand):
                     "status": entry.get("status", "completed"),
                     "github_url": entry.get("github_url", ""),
                     "live_url": entry.get("live_url", ""),
+                    "cover_image_alt": entry.get("cover_image_alt", ""),
                     "is_featured": entry.get("is_featured", False),
                     "is_published": entry.get("is_published", True),
                     "order": position,
@@ -200,6 +203,20 @@ class Command(BaseCommand):
                 # The role was added after the project: link them now.
                 project.experience = experience
                 project.save(update_fields=["experience", "updated_at"])
+            self.attach_cover(project, entry)
+
+    def attach_cover(self, project, entry):
+        filename = entry.get("cover_image")
+        if not filename or project.cover_image:
+            return
+        path = SEED_ASSETS / filename
+        if not path.exists():
+            self.notes.append(f"Cover image {filename} for {project.title!r} not found in seed_assets.")
+            return
+        with path.open("rb") as handle:
+            project.cover_image.save(f"{project.slug}{path.suffix}", File(handle), save=False)
+        project.cover_image_alt = project.cover_image_alt or entry.get("cover_image_alt", "")
+        project.save(update_fields=["cover_image", "cover_image_alt", "updated_at"])
 
     def seed_education(self):
         for position, entry in enumerate(seed_data.EDUCATION):
@@ -215,5 +232,27 @@ class Command(BaseCommand):
                     "description": entry.get("description", ""),
                     "order": position,
                     "is_published": entry.get("is_published", True),
+                },
+            )
+
+    def seed_company(self):
+        data = dict(seed_data.COMPANY)
+        for key in ("capabilities", "clients", "offices"):
+            data[key] = "\n".join(data.get(key, []))
+        if Company.load() is not None:
+            data = {field: value for field, value in data.items() if value not in ("", None)}
+        company, _ = self.upsert(Company, {"pk": 1}, data)
+
+        for position, entry in enumerate(seed_data.PRODUCTS):
+            self.upsert(
+                Product,
+                {"company": company, "name": entry["name"]},
+                {
+                    "category": entry["category"],
+                    "summary": entry.get("summary", ""),
+                    "url": entry.get("url", seed_data.PRODUCTS_URL),
+                    "is_featured": entry.get("is_featured", False),
+                    "is_published": entry.get("is_published", True),
+                    "order": position,
                 },
             )

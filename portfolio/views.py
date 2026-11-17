@@ -10,7 +10,7 @@ from django.urls import reverse_lazy
 from django.views.generic import DetailView, FormView, ListView, TemplateView
 
 from .forms import ContactForm
-from .models import ContactMessage, Education, Experience, Project, Skill
+from .models import ContactMessage, Education, Experience, Product, Project, Skill
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,7 @@ class HomeView(TemplateView):
             recent_experiences=experiences[:3],
             experience_count=experiences.count(),
             project_count=PUBLISHED_PROJECTS.count(),
+            featured_products=Product.objects.featured()[:6],
         )
         return context
 
@@ -110,6 +111,23 @@ class SkillListView(TemplateView):
         return context
 
 
+class CompanyView(TemplateView):
+    """The company the owner represents and the machines it supplies."""
+
+    template_name = "portfolio/company.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        labels = dict(Product.Category.choices)
+        groups = {}
+        for product in Product.objects.published():
+            groups.setdefault(product.category, []).append(product)
+        context["product_groups"] = [
+            (labels[key], groups[key]) for key in labels if key in groups
+        ]
+        return context
+
+
 class ContactView(FormView):
     template_name = "portfolio/contact.html"
     form_class = ContactForm
@@ -120,6 +138,13 @@ class ContactView(FormView):
         inquiry = self.request.GET.get("type")
         if inquiry in ContactMessage.InquiryType.values:
             initial["inquiry_type"] = inquiry
+        product_id = self.request.GET.get("product", "")
+        if product_id.isdigit():
+            product = Product.objects.published().filter(pk=product_id).first()
+            if product:
+                initial["product"] = product
+                initial.setdefault("inquiry_type", ContactMessage.InquiryType.MACHINE)
+                initial["subject"] = f"Enquiry: {product.name}"
         return initial
 
     def form_valid(self, form):
@@ -146,7 +171,8 @@ class ContactView(FormView):
             f"Country: {contact.country or '-'}\n"
             f"Phone / WhatsApp: {contact.phone or '-'}\n"
             f"WeChat: {contact.wechat_id or '-'}\n"
-            f"Type: {contact.get_inquiry_type_display()}\n\n"
+            f"Type: {contact.get_inquiry_type_display()}\n"
+            f"Machine: {contact.product or '-'}\n\n"
             f"{contact.message}\n"
         )
         try:

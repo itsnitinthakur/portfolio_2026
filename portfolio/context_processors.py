@@ -1,7 +1,7 @@
 # portfolio/context_processors.py
-from .models import Profile
+from .models import Company, Profile
 
 
 def site_profile(request):
-    """Make the site owner's profile available to every template as `profile`."""
-    return {"profile": Profile.load()}
+    """Make the owner's profile and company available to every template."""
+    return {"profile": Profile.load(), "company": Company.load()}

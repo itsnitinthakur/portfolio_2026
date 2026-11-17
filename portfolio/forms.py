@@ -1,7 +1,7 @@
 # portfolio/forms.py
 from django import forms
 
-from .models import ContactMessage
+from .models import ContactMessage, Product
 
 INPUT_CLASSES = (
     "block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base "
@@ -24,6 +24,7 @@ class ContactForm(forms.ModelForm):
             "phone",
             "wechat_id",
             "inquiry_type",
+            "product",
             "subject",
             "message",
         ]
@@ -33,6 +34,7 @@ class ContactForm(forms.ModelForm):
             "company": "Company",
             "country": "Country",
             "inquiry_type": "What is this about?",
+            "product": "Machine you're interested in (optional)",
         }
         widgets = {
             "name": forms.TextInput(attrs={"autocomplete": "name"}),
@@ -51,6 +53,9 @@ class ContactForm(forms.ModelForm):
                 continue
             field.widget.attrs.setdefault("class", INPUT_CLASSES)
         self.fields["message"].widget.attrs["minlength"] = 10
+        product_field = self.fields["product"]
+        product_field.queryset = Product.objects.published().order_by("name")
+        product_field.empty_label = "Not a specific machine"
 
     def clean_message(self):
         message = self.cleaned_data["message"].strip()

@@ -7,13 +7,16 @@
 <div class="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_2fr] lg:py-16">
   <aside>
     <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Contact</h1>
-    <p class="mt-3 text-lg text-slate-600">Have a project, a product to supply, or a role in mind? Send me a message.</p>
+    <p class="mt-3 text-lg text-slate-600">Need a machine, have a product to supply, or a project in mind? Send me a message and I'll reply by email.</p>
     <ul class="mt-8 space-y-4 text-slate-700">
       {% if profile.email %}<li><span class="block text-sm text-slate-500">Email</span><a href="mailto:{{ profile.email }}" class="font-medium hover:text-blue-700">{{ profile.email }}</a></li>{% endif %}
       {% if profile.phone %}<li><span class="block text-sm text-slate-500">Phone / WhatsApp</span><a href="tel:{{ profile.phone }}" class="font-medium hover:text-blue-700">{{ profile.phone }}</a></li>{% endif %}
       {% if profile.wechat_id %}<li><span class="block text-sm text-slate-500">WeChat</span><span class="font-medium">{{ profile.wechat_id }}</span></li>{% endif %}
       {% if profile.linkedin_url %}<li><span class="block text-sm text-slate-500">LinkedIn</span><a href="{{ profile.linkedin_url }}" rel="noopener" target="_blank" class="font-medium hover:text-blue-700">View profile</a></li>{% endif %}
-      {% if profile.company %}<li><span class="block text-sm text-slate-500">Company</span><span class="font-medium">{{ profile.company }}</span></li>{% endif %}
+      {% if company %}
+        <li><span class="block text-sm text-slate-500">Company</span><a href="{% url 'portfolio:company' %}" class="font-medium hover:text-blue-700">{{ company.name }}</a></li>
+        {% if company.sales_email %}<li><span class="block text-sm text-slate-500">Company sales</span><a href="mailto:{{ company.sales_email }}" class="font-medium hover:text-blue-700">{{ company.sales_email }}</a>{% if company.sales_phone %}<br><a href="tel:{{ company.sales_phone|cut:' ' }}" class="font-medium hover:text-blue-700">{{ company.sales_phone }}</a>{% endif %}</li>{% endif %}
+      {% elif profile.company %}<li><span class="block text-sm text-slate-500">Company</span><span class="font-medium">{{ profile.company }}</span></li>{% endif %}
     </ul>
   </aside>
 
@@ -31,7 +34,7 @@
         {% if field.name == "website" %}
           <div class="absolute -left-[9999px]" aria-hidden="true">{{ field.label_tag }} {{ field }}</div>
         {% else %}
-          <div class="{% if field.name in 'subject message inquiry_type' %}sm:col-span-2{% endif %}">
+          <div class="{% if field.name == "subject" or field.name == "message" or field.name == "inquiry_type" or field.name == "product" %}sm:col-span-2{% endif %}">
             <label for="{{ field.id_for_label }}" class="mb-1.5 block text-sm font-medium text-slate-700">{{ field.label }}{% if field.field.required %} <span class="text-red-600" aria-hidden="true">*</span>{% endif %}</label>
             {{ field }}
             {% if field.errors %}<p class="mt-1 text-sm text-red-700" id="{{ field.id_for_label }}-error">{{ field.errors|join:" " }}</p>{% endif %}
