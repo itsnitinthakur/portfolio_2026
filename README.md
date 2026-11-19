@@ -90,6 +90,8 @@ portfolio_site/
 ├── requirements.txt
 ├── .env.example            copy to .env (never commit .env)
 ├── .gitignore
+├── DEPLOY.md               free deployment guide (GitHub + PythonAnywhere)
+├── deploy/pythonanywhere_wsgi.py
 ├── config/                 project settings and root URLs
 │   ├── settings.py
 │   ├── urls.py
@@ -111,6 +113,10 @@ portfolio_site/
     ├── templates/portfolio/          pages and partials
     └── tests.py
 ```
+
+## Deploying
+
+Step-by-step free deployment (GitHub + PythonAnywhere): see **DEPLOY.md**.
 
 ## Before going live
 
