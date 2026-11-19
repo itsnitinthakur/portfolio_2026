@@ -6,7 +6,7 @@
 import os
 import sys
 
-PROJECT_DIR = "/home/USERNAME/portfolio-site"
+PROJECT_DIR = "/home/itsnitinjack/portfolio_2026"
 
 if PROJECT_DIR not in sys.path:
     sys.path.insert(0, PROJECT_DIR)
