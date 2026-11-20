@@ -90,6 +90,7 @@ SKILLS = [
     # Computer vision & hardware (from the GitHub projects)
     {"name": "Computer Vision", "category": "vision", "level": None, "is_featured": True},
     {"name": "OpenCV", "category": "vision", "level": None, "is_featured": False},
+    {"name": "Machine Vision", "category": "vision", "level": None, "is_featured": True},
     {"name": "YOLO (Ultralytics)", "category": "vision", "level": None, "is_featured": False},
     {"name": "Raspberry Pi", "category": "vision", "level": None, "is_featured": False},
     {"name": "Flask", "category": "backend", "level": None, "is_featured": False},
@@ -262,6 +263,53 @@ PROJECTS = [
         "cover_image_alt": (
             "CCTV frame of a truck being loaded at the factory dock, with each detected "
             "carton outlined and a box marked as counted in"
+        ),
+        "is_featured": True,
+        "is_published": True,
+    },
+    {
+        "title": "Lighter Vision Kit: Rebuilding a Factory Inspection Machine with Open-Source Tools",
+        "summary": (
+            "Reverse-engineered a two-camera lighter pick-up machine and rebuilt its "
+            "vision software with free tools: it finds each lighter at any angle, tells "
+            "front from back, rejects defects and gives the robot a grab point in mm."
+        ),
+        "description": (
+            "The problem\n"
+            "A lighter production line uses a Chinese vision machine: two industrial cameras "
+            "over a white backlight find each lighter on the belt so a robot can pick it up. "
+            "Its software is closed and licence-locked, and there is no documentation, so "
+            "the factory cannot change, repair or copy it.\n\n"
+            "What I built\n"
+            "First, tools that read the machine without changing it: a scanner that reports "
+            "the software, versions and settings in a copied machine folder, a PowerShell "
+            "collector for the machine PC, and a converter that turns the maker's recipe "
+            "files into open JSON recipes. Then a free replacement in Python and OpenCV: it "
+            "learns a lighter's outline from one good image, matches it at any angle, tells "
+            "front from back, checks for defects (missing wheel, missing hood, chipped body, "
+            "missing lever), and converts the grab point from pixels to millimetres for the "
+            "robot. Because shop photos are copyrighted and wrongly lit, a generator makes "
+            "realistic backlit images of the lighter types sold in India for testing.\n\n"
+            "Results\n"
+            "On a 200-lighter test set: every lighter accepted or rejected correctly, front "
+            "and back always right, worst angle error 0.10 degrees. Two Jupyter notebooks "
+            "show every step as pictures, and 19 automated tests cover the pipeline.\n\n"
+            "Where it stands\n"
+            "In progress. Next: real images and the lens focal length from the factory to "
+            "set the true mm-per-pixel, and the PLC register map before connecting to the "
+            "live machine."
+        ),
+        "impact": "",
+        "role": "Reverse engineering, design and development",
+        "company": "Kamtronics Technology Pvt. Ltd",
+        "skills": ["Python", "Computer Vision", "Machine Vision", "OpenCV", "Unit Testing"],
+        "status": "in_progress",
+        "github_url": "https://github.com/itsnitinthakur/lighter_vision_kit",
+        "live_url": "",
+        "cover_image": "lighter-vision-kit.jpg",
+        "cover_image_alt": (
+            "Three backlit lighter images: two outlined green as OK with angle and side, "
+            "one outlined red as rejected for a missing wheel"
         ),
         "is_featured": True,
         "is_published": True,

@@ -43,7 +43,7 @@ class SeededSiteTests(TestCase):
         self.assertContains(response, escape(current.job_title))
 
     def test_seeded_content(self):
-        self.assertEqual(Project.objects.published().count(), 3)
+        self.assertEqual(Project.objects.published().count(), 4)
         self.assertTrue(all(p.cover_image for p in Project.objects.filter(is_featured=True)))
         self.assertEqual(Education.objects.count(), 2)
         self.assertTrue(Product.objects.featured().exists())
